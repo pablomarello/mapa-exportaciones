@@ -7,6 +7,8 @@ import { Navbar } from './components/Navbar';
 import { Trivia } from './pages/Trivia';
 import { Map } from './pages/Map';
 import { Exportaciones } from './pages/Exportaciones';
+import { CardEstadistica } from './components/CardEstadistica';
+import { Estadistica } from './pages/Estadistica';
 
 
 function App() {
@@ -19,6 +21,7 @@ function App() {
         <Route path='/mapa' Component={Map} />
         <Route path='/trivia' Component={Trivia} />
         <Route path="/exportaciones" element={<Exportaciones/>}/>
+        <Route path='/estadistica' element={<Estadistica/>}/>
       </Routes>
     </Router>
     {/* <AppRouter/> */}

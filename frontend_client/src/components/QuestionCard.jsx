@@ -33,8 +33,10 @@ export const QuestionCard = () => {
             ...pregunta,
             incorrect_answer: respuestas, // Añade las respuestas incorrectas a la pregunta
           };
-        });
-  
+        })
+        
+       // Filtra las preguntas que tienen al menos una respuesta incorrecta
+       .filter((pregunta) => pregunta.incorrect_answer.length > 0);
        
   
         setQuestions(shuffleArray(combinedQuestions));

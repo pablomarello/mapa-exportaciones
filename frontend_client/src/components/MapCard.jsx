@@ -7,8 +7,9 @@ import { Popup, Polyline, GeoJSON } from 'react-leaflet';
 import { Card } from './Card';
 import { CardCatamarca } from './CardCatamarca';
 import { Icon } from './Icon';
-import { faFilter } from '@fortawesome/free-solid-svg-icons';
+import { faFilter, faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import { Modal } from './Modal';
+import { Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import '@ansur/leaflet-pulse-icon/dist/L.Icon.Pulse.css';
 import '@ansur/leaflet-pulse-icon';
@@ -20,6 +21,7 @@ import { getAllExportaciones } from '../api/exportaciones.api';
 
 export const MapCard = () => {
   const [exportaciones, setExportaciones] = useState([]);
+  const [originalExportaciones, setOriginalExportaciones] = useState([]); // Estado para guardar las exportaciones originales
   const [zoom, setZoom] = useState(19);
   const mapRef = useRef(null);
   const [selectedCountry, setSelectedCountry] = useState('');
@@ -29,6 +31,7 @@ export const MapCard = () => {
   const movingMarkerRef = useRef(null);
   const [totalFobDolar, setTotalFobDolar] = useState(0);
   const [totalPesoNeto, setTotalPesoNeto] = useState(0);
+  const [selectedYear, setSelectedYear] = useState('');  // Estado para el año
 
   useEffect(() => {
     getAllExportaciones()
@@ -48,6 +51,7 @@ export const MapCard = () => {
           setTotalPesoNeto(totalPeso);
 
           setExportaciones(validExportaciones);
+          setOriginalExportaciones(validExportaciones); // Guardar una copia de las exportaciones originales
 
           if (validExportaciones.length > 0) {
             console.log('Datos recibidos y filtrados:', validExportaciones);
@@ -92,8 +96,9 @@ export const MapCard = () => {
       const zoom = mapRef.current.getBoundsZoom(coords);
 
       if (coords.length === 1) {
-        mapRef.current.setZoom(5);
-        const boundCoords = [fixedPoint, coords[0]];
+        mapRef.current.fitBounds(bounds);
+        /* mapRef.current.setZoom(5);
+        const boundCoords = [fixedPoint, coords[0]]; */
         mapRef.current.fitBounds(L.latLngBounds(boundCoords));
       } else if (coords.length > 1) {
         mapRef.current.setZoom(zoom);
@@ -103,7 +108,7 @@ export const MapCard = () => {
 
   const filterData = () => {
     if (selectedCountry) {
-      const filteredData = exportaciones.filter(exp => exp.destino.nombre === selectedCountry);
+      const filteredData = originalExportaciones.filter(exp => exp.destino.nombre === selectedCountry); // Filtrar a partir de las exportaciones originales
       setExportaciones(filteredData);
 
       if (filteredData.length > 0) {
@@ -112,6 +117,8 @@ export const MapCard = () => {
         setFilteredCoords(null);
       }
     } else {
+      // Si se selecciona "Todos los países", restaurar los datos originales
+      setExportaciones(originalExportaciones);
       setFilteredCoords(null);
     }
   };
@@ -146,6 +153,9 @@ export const MapCard = () => {
       if (movingMarkerRef.current) {
         movingMarkerRef.current.removeFrom(mapRef.current);
       }
+      const bounds = L.latLngBounds([fixedPoint, filteredCoords]); // Incluir Catamarca y el país filtrado
+      mapRef.current.fitBounds(bounds); // Ajustar los límites del mapa
+
       const movingMarker = L.Marker.movingMarker(
         [fixedPoint, filteredCoords],
         [5000],
@@ -163,33 +173,15 @@ export const MapCard = () => {
   const uniqueCountries = exportaciones.length > 0 
     ? [...new Set(exportaciones.map(exp => exp.destino.nombre))].sort()
     : [];
-    {exportaciones.map((exp, index) => {
-      // Verifica si `exp.destino.coordinates` está definido y tiene al menos dos elementos
-      if (exp.destino && Array.isArray(exp.destino.coordenadas) && exp.destino.coordenadas.length >= 2) {
-        const pulseIcon = L.icon.pulse({
-          iconSize: [12, 12],
-          color: 'blue',
-          fillColor: 'blue'
-        });
-        return (
-          <Marker
-            key={index}
-            position={[exp.destino.coordenadas[1], exp.destino.coordenadas[0]]}
-            icon={pulseIcon}
-          >
-            <Popup key={index} className="w-80">
-            <Card nombre={exp.destino.nombre} coordenadas={exp.destino.coordenadas} fobDolar={exp.fob_dolar} pesoNeto={exp.peso_neto} producto={exp.producto.nombre} />
-            </Popup>
-          </Marker>
-        );
-      } else {
-        console.error('Las coordenadas no están definidas o no tienen el formato correcto para la exportación:', exp);
-        return null;
-      }
-    })}
+    
+  // Extraer los años únicos de las exportaciones
+  const uniqueYears = exportaciones.length > 0
+    ? [...new Set(exportaciones.map(exp => exp.año))].sort((a, b) => b - a)
+    : [];
+    
   return (
     <>
-      <div className="absolute bottom-36 left-4 z-10 p-2 bg-white text-black shadow-lg rounded-md">
+      <div className="absolute bottom-36 left-4 z-10 p-2 bg-white text-black shadow-lg rounded-md font-neue">
         <span className="block">Total FOB Dólar: {totalFobDolar.toLocaleString()} USD</span>
         <span className="block">Total Peso Neto: {totalPesoNeto.toLocaleString()} Kg</span>
       </div>
@@ -201,8 +193,11 @@ export const MapCard = () => {
           <span>Filtros</span>
         </button>
 
+        
+        
         <Modal isOpen={isModalOpen} onClose={toggleModal}>
           <div className="p-4">
+            
             <select
               value={selectedCountry}
               onChange={handleCountryChange}
@@ -213,8 +208,21 @@ export const MapCard = () => {
                 <option key={index} value={pais}>{pais}</option>
               ))}
             </select>
+
+            
           </div>
         </Modal>
+      </div>
+
+      <div className="absolute top-20 left-32 z-10 font-neue">
+      <Link to="/estadistica">
+        <button className="p-2 bg-azulclaro text-white shadow-lg rounded-md flex items-center">
+        <span className="mr-2">
+            <Icon icon={faChartSimple} />
+          </span>
+          <span>Estadística</span>
+        </button>
+        </Link>
       </div>
 
       <div className="relative w-full h-[77.4vh] z-0">
@@ -239,6 +247,10 @@ export const MapCard = () => {
               color: 'blue',
               fillColor: 'blue'
             });
+
+            // Filtrar y ordenar las exportaciones por destino
+            const exportacionesMismoDestino = exportaciones.filter(e => e.destino.nombre === exp.destino.nombre);
+            const top3Exportaciones = exportacionesMismoDestino.sort((a, b) => b.fob_dolar - a.fob_dolar).slice(0, 3);
             return (
               <Marker
                 key={index}
@@ -246,7 +258,8 @@ export const MapCard = () => {
                 icon={pulseIcon}
               >
                 <Popup key={index} className="w-80">
-                  <Card feature={exp} />
+                  {/* Pasar las 3 exportaciones a la Card */}
+                  <Card exportaciones={top3Exportaciones} />
                 </Popup>
               </Marker>
             );

@@ -21,7 +21,8 @@ class ExportacionResource(resources.ModelResource):
   class Meta:
     model = Exportacion
     fields = ('id', 'destino', 'producto', 'fob_dolar', 'peso_neto', 'año')
-  
+    import_id_fields = ['id']
+    
   def dehydrate_destino(self, exportacion):
     return exportacion.destino.nombre if exportacion.destino else 'N/A'
 

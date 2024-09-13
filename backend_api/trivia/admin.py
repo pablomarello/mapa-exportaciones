@@ -8,9 +8,11 @@ class PreguntaAdmin(admin.ModelAdmin):
   list_display = (
     'id',
     'question',
-    'correct_answer'
+    'correct_answer',
+    'publicada'
   )
   list_display_links = ('question',)
+  list_editable = ('publicada',)
 
 class RespuestaIncorrectaAdmin(admin.ModelAdmin):
   list_display = ('id', 'question_inc', 'answer_incorrect')

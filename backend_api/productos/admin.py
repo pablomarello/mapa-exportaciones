@@ -22,8 +22,9 @@ class ProductoAdmin(ImportExportModelAdmin):
   imagen_thumbnail.short_description = 'Imagen'
     
   ordering = ('nombre','id','rubro',)
-  search_fields = ('id','nombre','rubro',)
+  search_fields = ('id','nombre',)
   list_display_links = ('nombre',)
+  list_filter = ('rubro',)
 
 admin.site.register(Producto, ProductoAdmin)
 # Register your models here.

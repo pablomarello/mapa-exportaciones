@@ -5,7 +5,8 @@ from .models import Pregunta, RespuestaIncorrecta
 
 class PreguntaView(viewsets.ModelViewSet):
   serializer_class = PreguntaSerializer
-  queryset = Pregunta.objects.all()
+  queryset = Pregunta.objects.filter(publicada=True)  # envia al front solo las preguntas publicadas
+  """ queryset = Pregunta.objects.all() #envia al front todas las preguntas """
 
 class RespuestaIncorrectaView(viewsets.ModelViewSet):
   serializer_class = RespuestaIncorrectaSerializer
