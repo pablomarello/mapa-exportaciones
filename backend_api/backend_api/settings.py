@@ -158,7 +158,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT= os.path.join(BASE_DIR, 'media/')
 
-#lista para los servidores que se pueden conectar a django, aca ponemos el de react luego
+#lista para los servidores que se pueden conectar a django, aca ponemos el de react
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
 REST_FRAMEWORK = {

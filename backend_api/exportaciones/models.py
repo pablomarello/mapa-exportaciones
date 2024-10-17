@@ -8,6 +8,8 @@ class Exportacion(models.Model):
   fob_dolar = models.FloatField()
   peso_neto = models.FloatField()
   año = models.IntegerField(verbose_name="Año")
+  def __str__(self):
+    return f"Exportacion a {self.destino.nombre}"
 
   class Meta:
         verbose_name = 'Exportación'

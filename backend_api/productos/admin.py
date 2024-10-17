@@ -5,11 +5,17 @@ from django.contrib import admin
 from .models import Producto
 
 class ProductoResource(resources.ModelResource):
-  fields = (
-    'nombre',
-  )
+  
   class Meta:
     model = Producto
+    fields = ('nombre','rubro')
+    exclude = ('id',)
+    import_id_fields = ['nombre', 'rubro']
+
+  def before_import_row(self, row, **kwargs):
+        # Si el ID está presente en la fila, lo eliminamos
+        if 'id' in row:
+            del row['id']
 
 class ProductoAdmin(ImportExportModelAdmin):
   resource_class = ProductoResource

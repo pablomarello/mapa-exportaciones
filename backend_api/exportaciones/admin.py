@@ -7,7 +7,7 @@ from django.utils.formats import localize
 
 
 admin.site.site_header = 'Secretaría de Relaciones Internacionales'
-""" admin.site.index_title = 'Sitio Administrativo' """
+admin.site.index_title = 'Sitio Administrativo - Mapa de Exportaciones'
 admin.site.site_title = 'Secretaría de Relaciones Internacionales'
 
 class ExportacionResource(resources.ModelResource):
@@ -20,8 +20,14 @@ class ExportacionResource(resources.ModelResource):
   
   class Meta:
     model = Exportacion
-    fields = ('id', 'destino', 'producto', 'fob_dolar', 'peso_neto', 'año')
-    import_id_fields = ['id']
+    fields = ('destino', 'producto', 'fob_dolar', 'peso_neto', 'año')
+    exclude = ('id',)
+    import_id_fields = ['destino', 'producto', 'fob_dolar', 'peso_neto', 'año']
+
+  def before_import_row(self, row, **kwargs):
+        # Si el ID está presente en la fila, lo eliminamos
+        if 'id' in row:
+            del row['id']
     
   def dehydrate_destino(self, exportacion):
     return exportacion.destino.nombre if exportacion.destino else 'N/A'
@@ -32,7 +38,6 @@ class ExportacionResource(resources.ModelResource):
 class ExportacionAdmin(ImportExportModelAdmin):
   resource_class = ExportacionResource
   list_display = (
-    'id',
     'destino',
     'producto',
     'formatted_fob_dolar',
@@ -53,7 +58,6 @@ class ExportacionAdmin(ImportExportModelAdmin):
 
   list_display_links = ('destino','producto',)
   search_fields = (
-    'id',  # Para buscar por el ID de la exportación
     'destino__nombre',  # Para buscar por el nombre del país (destino)
     'producto__nombre',  # Para buscar por el nombre del producto
     'año',  # Para buscar por el año de la exportación

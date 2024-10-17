@@ -9,6 +9,12 @@ class RubroResource(resources.ModelResource):
   )
   class Meta:
     model = Rubro
+    exclude = ('id',)
+    import_id_fields = ['nombre']
+  def before_import_row(self, row, **kwargs):
+        # Si el ID está presente en la fila, lo eliminamos
+        if 'id' in row:
+            del row['id']
 
 class RubroAdmin(ImportExportModelAdmin):
   resource_class = RubroResource

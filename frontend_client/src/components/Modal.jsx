@@ -9,7 +9,7 @@ export const Modal = ({ isOpen, onClose, children }) => {
     
     <div className=" inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 font-neue">
       <div className="bg-white p-4 rounded shadow-lg">
-        <p >Países:</p>
+        
         <button className="absolute top-10 right-2 " onClick={onClose}><Icon icon={faXmark}/></button>
         {children}
       </div>

@@ -31,7 +31,11 @@ export const MapCard = () => {
   const movingMarkerRef = useRef(null);
   const [totalFobDolar, setTotalFobDolar] = useState(0);
   const [totalPesoNeto, setTotalPesoNeto] = useState(0);
-  const [selectedYear, setSelectedYear] = useState('');  // Estado para el año
+  const [filteredYear, setFilteredYear] = useState('2023');  // Estado para el año
+  const [uniqueYears, setUniqueYears] = useState([]); // Estado para los años únicos
+  const [filteredData, setFilteredData] = useState([]);
+  const [uniqueCountries, setUniqueCountries] = useState([]); // Estado para los países únicos
+  
 
   useEffect(() => {
     getAllExportaciones()
@@ -43,21 +47,19 @@ export const MapCard = () => {
             (exportacion) => exportacion.destino && exportacion.destino.coordenadas
           );
 
-          // Calcular la suma total de FOB Dólar y Peso Neto
-          const totalFob = validExportaciones.reduce((sum, exp) => sum + exp.fob_dolar, 0);
-          const totalPeso = validExportaciones.reduce((sum, exp) => sum + exp.peso_neto, 0);
-
-          setTotalFobDolar(totalFob);
-          setTotalPesoNeto(totalPeso);
+       
 
           setExportaciones(validExportaciones);
           setOriginalExportaciones(validExportaciones); // Guardar una copia de las exportaciones originales
 
-          if (validExportaciones.length > 0) {
-            console.log('Datos recibidos y filtrados:', validExportaciones);
-          } else {
-            console.error('No se encontraron exportaciones válidas con coordenadas.');
-          }
+            // Extraer años únicos de las exportaciones y actualizar el estado
+            const years = [...new Set(validExportaciones.map(exp => exp.año))].sort((a, b) => b - a);
+            setUniqueYears(years);
+
+            // Extraer países únicos de las exportaciones válidas y actualizar el estado
+            const countries = [...new Set(validExportaciones.map(exp => exp.destino.nombre))];
+            setUniqueCountries(countries);
+
         } else {
           console.error('Los datos recibidos no son un array:', exportacionesData);
           setExportaciones([]);
@@ -69,7 +71,18 @@ export const MapCard = () => {
       });
   }, []);
 
+  // Efect para recalcular los totales cuando cambie el año filtrado o los datos filtrados
+  useEffect(() => {
+    const filteredExportaciones = originalExportaciones.filter(
+      exp => exp.año === Number(filteredYear)
+  );
 
+  const totalFob = filteredExportaciones.reduce((sum, exp) => sum + exp.fob_dolar, 0);
+  const totalPeso = filteredExportaciones.reduce((sum, exp) => sum + exp.peso_neto, 0);
+
+  setTotalFobDolar(totalFob);
+  setTotalPesoNeto(totalPeso);
+}, [filteredYear, originalExportaciones]);
 
   useEffect(() => {
     const catamarcaData = provinciasData.features.filter(
@@ -97,8 +110,6 @@ export const MapCard = () => {
 
       if (coords.length === 1) {
         mapRef.current.fitBounds(bounds);
-        /* mapRef.current.setZoom(5);
-        const boundCoords = [fixedPoint, coords[0]]; */
         mapRef.current.fitBounds(L.latLngBounds(boundCoords));
       } else if (coords.length > 1) {
         mapRef.current.setZoom(zoom);
@@ -107,29 +118,53 @@ export const MapCard = () => {
   }, [exportaciones]);
 
   const filterData = () => {
-    if (selectedCountry) {
-      const filteredData = originalExportaciones.filter(exp => exp.destino.nombre === selectedCountry); // Filtrar a partir de las exportaciones originales
-      setExportaciones(filteredData);
+    let data = originalExportaciones;
+    if(filteredYear){
+      data = data.filter(exp => exp.año === Number(filteredYear));
+    }
 
-      if (filteredData.length > 0) {
-        setFilteredCoords([filteredData[0].destino.coordenadas[1], filteredData[0].destino.coordenadas[0]]);
-      } else {
-        setFilteredCoords(null);
-      }
-    } else {
-      // Si se selecciona "Todos los países", restaurar los datos originales
+    // Actualizar los países únicos basados en las exportaciones filtradas por año
+    const countries = [...new Set(data.map(exp => exp.destino.nombre))];
+    setUniqueCountries(countries); // Actualizar el select de países según las exportaciones filtradas por año
+
+    if (selectedCountry) {
+      data = data.filter(exp => exp.destino.nombre === selectedCountry);
+    }
+    setFilteredData(data);
+
+    // Si se selecciona "Todos los países", restaurar los datos originales
+    if(selectedCountry === ''){
       setExportaciones(originalExportaciones);
       setFilteredCoords(null);
     }
+    
   };
 
   useEffect(() => {
     filterData();
-  }, [selectedCountry]);
+  }, [selectedCountry,filteredYear]);
+
+  useEffect(() => {
+    
+    if (filteredData.length > 0) {
+      setFilteredCoords([filteredData[0].destino.coordenadas[1], filteredData[0].destino.coordenadas[0]]);
+    } else {
+      setFilteredCoords(null);
+    }
+  }, [filteredData])
+
+  useEffect(() => {
+    setFilteredData(originalExportaciones)
+  }, [originalExportaciones])
+  
 
   const handleCountryChange = (e) => {
     setSelectedCountry(e.target.value);
   };
+
+  const handleYearChange = (e) => {
+    setFilteredYear(e.target.value);
+  }
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
@@ -149,39 +184,33 @@ export const MapCard = () => {
   });
 
   useEffect(() => {
-    if (filteredCoords) {
+    if (filteredCoords && selectedCountry) {
+      // Solo crear y animar el marcador si se seleccionó un país
       if (movingMarkerRef.current) {
         movingMarkerRef.current.removeFrom(mapRef.current);
       }
+  
       const bounds = L.latLngBounds([fixedPoint, filteredCoords]); // Incluir Catamarca y el país filtrado
       mapRef.current.fitBounds(bounds); // Ajustar los límites del mapa
-
+  
       const movingMarker = L.Marker.movingMarker(
         [fixedPoint, filteredCoords],
         [5000],
         { icon: movingMarkerIcon }
       ).addTo(mapRef.current);
+  
       movingMarker.start();
       movingMarkerRef.current = movingMarker;
     } else if (movingMarkerRef.current) {
+      // Remover la animación si no hay un país seleccionado
       movingMarkerRef.current.removeFrom(mapRef.current);
       movingMarkerRef.current = null;
     }
-  }, [filteredCoords]);
-
-  // Extraer los países únicos de exportaciones cuando estén disponibles
-  const uniqueCountries = exportaciones.length > 0 
-    ? [...new Set(exportaciones.map(exp => exp.destino.nombre))].sort()
-    : [];
-    
-  // Extraer los años únicos de las exportaciones
-  const uniqueYears = exportaciones.length > 0
-    ? [...new Set(exportaciones.map(exp => exp.año))].sort((a, b) => b - a)
-    : [];
-    
+  }, [filteredCoords, selectedCountry]); // Añadir selectedCountry como dependencia
+  
   return (
     <>
-      <div className="absolute bottom-36 left-4 z-10 p-2 bg-white text-black shadow-lg rounded-md font-neue">
+      <div className="absolute bottom-36 left-4 z-10 p-2 bg-white text-black shadow-lg rounded-md font-neue border border-black">
         <span className="block">Total FOB Dólar: {totalFobDolar.toLocaleString()} USD</span>
         <span className="block">Total Peso Neto: {totalPesoNeto.toLocaleString()} Kg</span>
       </div>
@@ -196,18 +225,36 @@ export const MapCard = () => {
         
         
         <Modal isOpen={isModalOpen} onClose={toggleModal}>
-          <div className="p-4">
+        <div className="p-4">
+        <label htmlFor="pais" className="block text-sm font-medium text-gray-700">
+                Año:
+              </label>
+          <select
+            value={filteredYear}
+            onChange={handleYearChange}
+            className="p-2 border border-gray-400 rounded"
+          >
             
+            {uniqueYears.map((year, index) => (
+              <option key={index} value={year}>{year}</option>
+            ))}
+          </select>
+        </div>
+            <div className="p-4">
+              <label htmlFor="pais" className="block text-sm font-medium text-gray-700">
+                País:
+              </label>
             <select
-              value={selectedCountry}
-              onChange={handleCountryChange}
-              className="p-2 border border-gray-400 rounded"
-            >
-              <option value="">Todos los países</option>
-              {uniqueCountries.map((pais, index) => (
-                <option key={index} value={pais}>{pais}</option>
-              ))}
-            </select>
+            value={selectedCountry}
+            onChange={handleCountryChange}
+            className="p-2 border border-gray-400 rounded ml-2"
+            disabled={!filteredYear} // Deshabilitar el select de país si no hay un año seleccionado
+          >
+            <option value="">Todos los países</option>
+            {uniqueCountries.sort((a, b) => a.localeCompare(b)).map((country, index) => (
+              <option key={index} value={country}>{country}</option>
+            ))}
+          </select>
 
             
           </div>
@@ -241,16 +288,20 @@ export const MapCard = () => {
               <CardCatamarca />
             </Popup>
           </Marker>
-          {exportaciones.map((exp, index) => {
+          {filteredData.map((exp, index) => {
             const pulseIcon = L.icon.pulse({
               iconSize: [12, 12],
               color: 'blue',
               fillColor: 'blue'
             });
 
-            // Filtrar y ordenar las exportaciones por destino
-            const exportacionesMismoDestino = exportaciones.filter(e => e.destino.nombre === exp.destino.nombre);
-            const top3Exportaciones = exportacionesMismoDestino.sort((a, b) => b.fob_dolar - a.fob_dolar).slice(0, 3);
+            // Filtrar las exportaciones por el mismo destino Y por el año seleccionado
+            const exportacionesMismoDestino = filteredData.filter(e => e.destino.nombre === exp.destino.nombre);
+            // Filtrar las 3 exportaciones con mayor fob_dolar para el destino seleccionado
+            const top3Exportaciones = exportacionesMismoDestino
+            .sort((a, b) => b.fob_dolar - a.fob_dolar)
+            .slice(0, 3);
+
             return (
               <Marker
                 key={index}
@@ -258,13 +309,13 @@ export const MapCard = () => {
                 icon={pulseIcon}
               >
                 <Popup key={index} className="w-80">
-                  {/* Pasar las 3 exportaciones a la Card */}
+                  
                   <Card exportaciones={top3Exportaciones} />
                 </Popup>
               </Marker>
             );
           })}
-          {filteredCoords && (
+          {selectedCountry && filteredCoords && (
             <Polyline
               positions={[fixedPoint, filteredCoords]}
               color="red"
