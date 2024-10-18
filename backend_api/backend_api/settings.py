@@ -14,7 +14,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path, os
 from decouple import config
 
-# Asegúrate de que la ruta a OSGeo4W esté configurada correctamente
+
 OSGEO4W = r"C:\OSGeo4W"
 assert os.path.isdir(OSGEO4W), "No existe el directorio: " + OSGEO4W
 
@@ -158,7 +158,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT= os.path.join(BASE_DIR, 'media/')
 
-#lista para los servidores que se pueden conectar a django, aca ponemos el de react
+
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
 REST_FRAMEWORK = {
@@ -167,11 +167,11 @@ REST_FRAMEWORK = {
 }
 
 LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (-34.6037, -58.3816),  # Configura una ubicación central predeterminada (Buenos Aires en este caso)
-    'DEFAULT_ZOOM': 1,  # Nivel de zoom predeterminado
+    'DEFAULT_CENTER': (-34.6037, -58.3816),
+    'DEFAULT_ZOOM': 1,
     'MIN_ZOOM': 1,
     'MAX_ZOOM': 18,
     'SCALE': 'both',
     'ATTRIBUTION_PREFIX': 'Django',
-    'TILES': 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',  # Fuente de los tiles de mapa
+    'TILES': 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
 }

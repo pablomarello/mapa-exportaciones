@@ -25,7 +25,7 @@ class ExportacionResource(resources.ModelResource):
     import_id_fields = ['destino', 'producto', 'fob_dolar', 'peso_neto', 'año']
 
   def before_import_row(self, row, **kwargs):
-        # Si el ID está presente en la fila, lo eliminamos
+        
         if 'id' in row:
             del row['id']
     
@@ -58,9 +58,9 @@ class ExportacionAdmin(ImportExportModelAdmin):
 
   list_display_links = ('destino','producto',)
   search_fields = (
-    'destino__nombre',  # Para buscar por el nombre del país (destino)
-    'producto__nombre',  # Para buscar por el nombre del producto
-    'año',  # Para buscar por el año de la exportación
+    'destino__nombre',  
+    'producto__nombre',  
+    'año',  
 )
   list_filter = ('año',)
   ordering = ('-fob_dolar',)
@@ -69,4 +69,4 @@ class ExportacionAdmin(ImportExportModelAdmin):
 
 
 admin.site.register(Exportacion, ExportacionAdmin)
-# Register your models here.
+
