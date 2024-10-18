@@ -11,8 +11,21 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 
-from pathlib import Path
+from pathlib import Path, os
 from decouple import config
+
+
+OSGEO4W = r"C:\OSGeo4W"
+assert os.path.isdir(OSGEO4W), "No existe el directorio: " + OSGEO4W
+
+# Configuración de las variables de entorno
+os.environ['OSGEO4W_ROOT'] = OSGEO4W
+os.environ['GDAL_DATA'] = os.path.join(OSGEO4W, r"apps\gdal\share\gdal")
+os.environ['PROJ_LIB'] = os.path.join(OSGEO4W, r"share\proj")
+os.environ['PATH'] = os.path.join(OSGEO4W, r"bin") + ";" + os.environ['PATH']
+
+# Configurar GDAL_LIBRARY_PATH
+GDAL_LIBRARY_PATH = os.path.join(OSGEO4W, r"bin\gdal309.dll")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,13 +54,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'leaflet',
+    'django.contrib.gis',
     'corsheaders',
     'rest_framework',
     'coreapi',
     'productos',
     'exportaciones',
     'rubros',
-    'paises',
+    'geo',
+    'trivia',
+    'import_export',
 ]
 
 MIDDLEWARE = [
@@ -87,7 +104,7 @@ WSGI_APPLICATION = 'backend_api.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': config("DB_NAME"),
         'USER': config("DB_USER"),
         'PASSWORD': config("DB_PASSWORD"),
@@ -118,9 +135,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
 
 USE_I18N = True
 
@@ -131,16 +148,30 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#lista para los servidores que se pueden conectar a django, aca ponemos el de react luego
+MEDIA_URL = '/media/'
+MEDIA_ROOT= os.path.join(BASE_DIR, 'media/')
+
+
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
 REST_FRAMEWORK = {
     
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+}
+
+LEAFLET_CONFIG = {
+    'DEFAULT_CENTER': (-34.6037, -58.3816),
+    'DEFAULT_ZOOM': 1,
+    'MIN_ZOOM': 1,
+    'MAX_ZOOM': 18,
+    'SCALE': 'both',
+    'ATTRIBUTION_PREFIX': 'Django',
+    'TILES': 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
 }

@@ -1,10 +1,10 @@
 from django.db import models
+from rubros .models import Rubro
 
 class Producto(models.Model):
-  nombre = models.CharField(max_length=100)
-  fob_dolar = models.IntegerField(blank=True,null=True)
-  peso_neto = models.IntegerField(blank=True,null=True)
-  rubro_id = models.IntegerField(blank=True,null=True)
+  nombre = models.CharField(max_length=400)
+  rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, related_name='rubros')
+  imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
   def __str__(self):
     return self.nombre
 # Create your models here.
